@@ -1,5 +1,10 @@
 package net.altinhedef.altinhedef.controller
 
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.tags.Tag
+import io.swagger.v3.oas.annotations.responses.ApiResponse as OpenApiResponse
 import jakarta.validation.Valid
 import net.altinhedef.altinhedef.dto.ApiResponse
 import net.altinhedef.altinhedef.dto.auth.LoginRequest
@@ -27,11 +32,21 @@ import org.springframework.web.bind.annotation.RequestMapping
 
 @RestController
 @RequestMapping("/api/auth")
+@Tag(name = "Authentication", description = "User Register and Login Operations")
 class AuthController(
     private val userService: UserService,
     private val authService: AuthService,
     private val loginAttemptService: LoginAttemptService
 ) {
+    @Operation(
+        summary = "Register New Student",
+        description = "Adds a user to the system with 'STUDENT' role",
+        responses = [
+            OpenApiResponse(responseCode = "201", description = "User register is successful."),
+            OpenApiResponse(responseCode = "409", description = "This email address is already registered.", content = [Content(schema = Schema(implementation = ApiResponse::class))]),
+            OpenApiResponse(responseCode = "400", description = "Bad request (password policy etc.)", content = [Content(schema = Schema(implementation = ApiResponse::class))])
+        ]
+    )
     @PostMapping("register")
     fun registerUser(@Valid @RequestBody request: RegisterRequest): ResponseEntity<ApiResponse<UserResponse>> {
         return try {
@@ -63,6 +78,15 @@ class AuthController(
         }
     }
 
+    @Operation(
+        summary = "User Login",
+        description = "It validates user's email and password. If it valides, it returns access and refresh tokens",
+        responses = [
+            OpenApiResponse(responseCode = "200", description = "Login successful.", content = [Content(schema = Schema(implementation = LoginResponse::class))]),
+            OpenApiResponse(responseCode = "401", description = "Email or password is wrong."),
+            OpenApiResponse(responseCode = "423", description = "Account is locked due to too many unsuccessful attempts")
+        ]
+    )
     @PostMapping("login")
     fun login(@RequestBody request: LoginRequest): ResponseEntity<ApiResponse<LoginResponse>> {
         try {
@@ -103,6 +127,14 @@ class AuthController(
         }
     }
 
+    @Operation(
+        summary = "Refresh Access Token",
+        description = "Request a new access token with using a refresh token.",
+        responses = [
+            OpenApiResponse(responseCode = "200", description = "Token has been refreshed", content = [Content(schema = Schema(implementation = LoginResponse::class))]),
+            OpenApiResponse(responseCode = "401", description = "Invalid refresh token")
+        ]
+    )
     private fun User.toUserResponse(): UserResponse {
         return UserResponse(
             id = this.id!!,

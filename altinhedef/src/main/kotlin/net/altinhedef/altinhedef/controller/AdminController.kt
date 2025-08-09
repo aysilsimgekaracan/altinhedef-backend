@@ -1,5 +1,9 @@
 package net.altinhedef.altinhedef.controller
 
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.security.SecurityRequirement
+import io.swagger.v3.oas.annotations.responses.ApiResponse as OpenApiResponse
+import io.swagger.v3.oas.annotations.tags.Tag
 import net.altinhedef.altinhedef.dto.ApiResponse
 import net.altinhedef.altinhedef.dto.auth.CreateTeacherRequest
 import net.altinhedef.altinhedef.dto.response.user.UserResponse
@@ -15,9 +19,20 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/api/admin")
+@Tag(name = "Admin Operations", description = "Operations that only admin users can request")
 @PreAuthorize("hasRole('ADMIN')")
 class AdminController(private val userService: UserService) {
 
+    @Operation(
+        summary = "Register New Teacher",
+        description = "It creates a new user with 'TEACHER' role",
+        security = [SecurityRequirement(name = "Bearer Authentication")],
+        responses = [
+            OpenApiResponse(responseCode = "201", description = "Created new teacher successfully."),
+            OpenApiResponse(responseCode = "409", description = "This mail address is already in use."),
+            OpenApiResponse(responseCode = "403", description = "You don't have access. (Forbidden)")
+        ]
+    )
     @PostMapping("/register/teacher")
     fun createTeacher(@RequestBody request: CreateTeacherRequest): ResponseEntity<ApiResponse<UserResponse>> {
         return try {
