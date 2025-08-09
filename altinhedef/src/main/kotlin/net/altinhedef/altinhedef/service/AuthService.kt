@@ -8,6 +8,7 @@ import net.altinhedef.altinhedef.repository.UserRepository
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.authentication.AuthenticationManager
+import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.stereotype.Service
 import java.time.Instant
@@ -18,7 +19,8 @@ class AuthService(
     private val userRepository: UserRepository,
     private val jwtService: JwtService,
     private val authenticationManager: AuthenticationManager,
-    private val refreshTokenRepository: UserRefreshTokenRepository
+    private val refreshTokenRepository: UserRefreshTokenRepository,
+    private val loginAttemptService: LoginAttemptService
 ) {
     @Value("\${jwt.refresh-token.expiration-in-ms}")
     private val refreshTokenDurationMs: Long = 604800000 // 7 days
@@ -29,6 +31,11 @@ class AuthService(
     private val logger = LoggerFactory.getLogger(AuthService::class.java)
 
     fun login(request: LoginRequest): LoginResponse {
+
+        // Check for brute force
+        if (loginAttemptService.isBlocked(request.email)) {
+            throw IllegalStateException("Hesabınız çok fazla başarısız deneme nedeniyle geçici olarak kilitlenmiştir")
+        }
 
         authenticationManager.authenticate(
             UsernamePasswordAuthenticationToken(
@@ -60,6 +67,8 @@ class AuthService(
         )
 
         val savedRefreshToken = refreshTokenRepository.save(refreshToken)
+
+        loginAttemptService.loginSucceeded(request.email)
 
         return LoginResponse(accessToken = accessToken, refreshToken = savedRefreshToken.token)
     }
