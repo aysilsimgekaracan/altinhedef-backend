@@ -11,7 +11,7 @@ import java.time.LocalDateTime
 
 @Entity
 @Table(name= "users")
-data class User(
+ class User(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
@@ -27,12 +27,6 @@ data class User(
 
     @Column(name = "password_hash", nullable = false)
     var passwordHash: String,
-
-    @Column(name = "refresh_token")
-    var refreshToken: String? = null,
-
-    @Column(name = "refresh_token_expiry")
-    var refreshTokenExpiry: Instant? = null,
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "role_id", nullable = false)
@@ -50,7 +44,10 @@ data class User(
     var teacherProfile: Teacher? = null,
 
     @OneToOne(mappedBy = "user", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-    var studentProfile: Student? = null
+    var studentProfile: Student? = null,
+
+    @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true)
+    val refreshTokens: MutableSet<UserRefreshToken> = mutableSetOf()
 ) : UserDetails {
     override fun getAuthorities(): Collection<GrantedAuthority?>? {
         return listOf(SimpleGrantedAuthority("ROLE_${role.name}"))
@@ -78,5 +75,19 @@ data class User(
 
     override fun isEnabled(): Boolean {
         return true
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is User) return false
+        return id != null && id == other.id
+    }
+
+    override fun hashCode(): Int {
+        return javaClass.hashCode()
+    }
+
+    override fun toString(): String {
+        return "User(id=$id, name='$name', surname='$surname', email='$email', role=${role.name})"
     }
 }

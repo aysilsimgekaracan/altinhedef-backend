@@ -12,7 +12,7 @@ import java.sql.Date
 
 @Entity
 @Table(name = "students")
-data class Student (
+class Student (
     @Id
     @Column(name = "user_id")
     val userId: Long,
@@ -30,4 +30,18 @@ data class Student (
     @MapsId
     @JoinColumn(name = "user_id")
     val user: User
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is Student) return false
+        return userId == other.userId
+    }
+
+    override fun hashCode(): Int {
+        return userId.hashCode()
+    }
+
+    override fun toString(): String {
+        return "Student(userId=$userId, golds=$golds)"
+    }
+}
