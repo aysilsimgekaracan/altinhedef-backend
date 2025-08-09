@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController
 @PreAuthorize("hasRole('ADMIN')")
 class AdminController(private val userService: UserService) {
 
-    @PostMapping("/teachers")
+    @PostMapping("/register/teacher")
     fun createTeacher(@RequestBody request: CreateTeacherRequest): ResponseEntity<ApiResponse<UserResponse>> {
         return try {
             val newTeacher = userService.createTeacher(request)

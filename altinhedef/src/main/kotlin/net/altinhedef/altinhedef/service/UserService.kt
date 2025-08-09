@@ -4,11 +4,15 @@ import jakarta.transaction.Transactional
 import net.altinhedef.altinhedef.dto.auth.RegisterRequest
 import net.altinhedef.altinhedef.dto.auth.CreateTeacherRequest
 import net.altinhedef.altinhedef.entity.Role
+import net.altinhedef.altinhedef.entity.Student
 import net.altinhedef.altinhedef.entity.Teacher
 import net.altinhedef.altinhedef.entity.User
 import net.altinhedef.altinhedef.repository.RoleRepository
 import net.altinhedef.altinhedef.repository.TeacherRepository
 import net.altinhedef.altinhedef.repository.UserRepository
+import org.springframework.security.core.userdetails.UserDetails
+import org.springframework.security.core.userdetails.UserDetailsService
+import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 
@@ -16,9 +20,8 @@ import org.springframework.stereotype.Service
 class UserService(
     private val userRepository: UserRepository,
     private val roleRepository: RoleRepository,
-    private val passwordEncoder: PasswordEncoder,
-    private val teacherRepository: TeacherRepository
-) {
+    private val passwordEncoder: PasswordEncoder
+) : UserDetailsService {
     @Transactional
     fun registerUser(request: RegisterRequest): User {
         if (userRepository.findByEmail(request.email) != null) {
@@ -37,6 +40,13 @@ class UserService(
             passwordHash = hashedPassword,
             role = studentRole
         )
+
+        val newStudentProfile = Student(
+            userId = 0,
+            user = newUser
+        )
+
+        newUser.studentProfile = newStudentProfile
 
         return userRepository.save(newUser)
     }
@@ -62,12 +72,23 @@ class UserService(
         val savedUser = userRepository.save(newUser)
 
         val newTeacherProfile = Teacher(
-            userId = savedUser.id!!,
-            bio = request.bio
+            userId = 0,
+            bio = request.bio,
+            user = newUser
         )
 
-        teacherRepository.save(newTeacherProfile)
+        newUser.teacherProfile = newTeacherProfile
 
         return savedUser
+    }
+
+    fun findUserByEmail(email: String): User {
+        return userRepository.findByEmail(email)
+            ?: throw UsernameNotFoundException("Bu email ile bir kullanıcı bulunamadı: $email")
+    }
+
+    override fun loadUserByUsername(username: String): UserDetails {
+        return userRepository.findByEmail(username)
+            ?: throw UsernameNotFoundException("Kullanıcı bulunamadı: $username")
     }
 }

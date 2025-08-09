@@ -11,23 +11,23 @@ import jakarta.persistence.Table
 import java.sql.Date
 
 @Entity
-@Table(name = "student")
+@Table(name = "students")
 data class Student (
     @Id
     @Column(name = "user_id")
     val userId: Long,
 
-    @Column(nullable = true)
-    val golds: Int? = 0,
+    @Column(nullable = false)
+    var golds: Int = 0,
 
     @Column(name = "birth_date", nullable = true)
-    val birthDate: Date?,
+    var birthDate: Date? = null,
 
     @Column(name = "phone_number", length = 30, nullable = true)
-    val phoneNumber: String?,
+    var phoneNumber: String? = null,
 
     @OneToOne(fetch = FetchType.LAZY)
     @MapsId
     @JoinColumn(name = "user_id")
-    val user: User? = null
+    val user: User
 )

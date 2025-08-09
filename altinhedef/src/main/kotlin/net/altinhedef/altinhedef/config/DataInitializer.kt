@@ -34,7 +34,7 @@ class DataInitializer(
            logger.info("DataInitializer: Default roles are already created.")
        }
 
-       if (userRepository.count() == 0L) {
+       if (!userRepository.existsByRole_Name("ADMIN")) {
            logger.info("DataInitializer: Creating first admin users")
            val adminRole = roleRepository.findByName("ADMIN")!!
 

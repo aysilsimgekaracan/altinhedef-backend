@@ -19,8 +19,8 @@ data class Teacher (
     @Column(columnDefinition = "TEXT")
     var bio: String? = null,
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne
     @MapsId
     @JoinColumn(name = "user_id")
-    val user: User? = null
+    val user: User
 )

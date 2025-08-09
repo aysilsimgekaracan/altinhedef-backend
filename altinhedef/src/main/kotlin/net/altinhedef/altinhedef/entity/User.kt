@@ -3,6 +3,9 @@ package net.altinhedef.altinhedef.entity
 import jakarta.persistence.*
 import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.UpdateTimestamp
+import org.springframework.security.core.GrantedAuthority
+import org.springframework.security.core.authority.SimpleGrantedAuthority
+import org.springframework.security.core.userdetails.UserDetails
 import java.time.LocalDateTime
 
 @Entity
@@ -24,7 +27,7 @@ data class User(
     @Column(name = "password_hash", nullable = false)
     var passwordHash: String,
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "role_id", nullable = false)
     var role: Role,
 
@@ -34,5 +37,39 @@ data class User(
 
     @CreationTimestamp
     @Column(name = "updated_at")
-    val updatedAt: LocalDateTime? = null
-)
+    val updatedAt: LocalDateTime? = null,
+
+    @OneToOne(mappedBy = "user", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+    var teacherProfile: Teacher? = null,
+
+    @OneToOne(mappedBy = "user", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+    var studentProfile: Student? = null
+) : UserDetails {
+    override fun getAuthorities(): Collection<GrantedAuthority?>? {
+        return listOf(SimpleGrantedAuthority("ROLE_${role.name}"))
+    }
+
+    override fun getPassword(): String? {
+       return this.passwordHash
+    }
+
+    override fun getUsername(): String? {
+       return this.email
+    }
+
+    override fun isAccountNonExpired(): Boolean {
+        return true
+    }
+
+    override fun isAccountNonLocked(): Boolean {
+        return true
+    }
+
+    override fun isCredentialsNonExpired(): Boolean {
+        return true
+    }
+
+    override fun isEnabled(): Boolean {
+        return true
+    }
+}
