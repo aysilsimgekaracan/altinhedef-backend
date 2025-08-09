@@ -2,10 +2,12 @@ package net.altinhedef.altinhedef.controller
 
 import net.altinhedef.altinhedef.dto.ApiResponse
 import net.altinhedef.altinhedef.dto.auth.LoginRequest
+import net.altinhedef.altinhedef.dto.auth.RefreshTokenRequest
 import net.altinhedef.altinhedef.dto.auth.RegisterRequest
 import net.altinhedef.altinhedef.dto.response.user.LoginResponse
 import net.altinhedef.altinhedef.dto.response.user.UserResponse
 import net.altinhedef.altinhedef.entity.User
+import net.altinhedef.altinhedef.service.AuthService
 import net.altinhedef.altinhedef.service.JwtService
 import net.altinhedef.altinhedef.service.UserService
 import org.springframework.http.HttpStatus
@@ -24,8 +26,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 @RequestMapping("/api/auth")
 class AuthController(
     private val userService: UserService,
-    private val authenticationManager: AuthenticationManager,
-    private val jwtService: JwtService
+    private val authService: AuthService
 ) {
     @PostMapping("register")
     fun registerUser(@RequestBody request: RegisterRequest): ResponseEntity<ApiResponse<UserResponse>> {
@@ -54,17 +55,9 @@ class AuthController(
 
     @PostMapping("login")
     fun login(@RequestBody request: LoginRequest): ResponseEntity<ApiResponse<LoginResponse>> {
-
         try {
-            val authentication = authenticationManager.authenticate(
-                UsernamePasswordAuthenticationToken(request.email, request.password)
-            )
-            SecurityContextHolder.getContext().authentication = authentication
-
-            val userDetails = authentication.principal as UserDetails
-            val token = jwtService.generateToken(userDetails)
-
-            val response = ApiResponse(true, "Giriş Başarılı", LoginResponse(token))
+            val loginData = authService.login(request)
+            val response = ApiResponse(true, "Giriş Başarılı", loginData)
             return ResponseEntity.ok(response)
         } catch (e: BadCredentialsException) {
             val errorResponse = ApiResponse<LoginResponse>(
@@ -72,6 +65,24 @@ class AuthController(
                 message = "E-posta veya şifre hatalı"
             )
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse)
+        }
+    }
+
+    @PostMapping("/refresh")
+    fun refreshToken(@RequestBody request: RefreshTokenRequest): ResponseEntity<ApiResponse<LoginResponse>> {
+        try {
+            val newTokens = authService.refreshToken(request.refreshToken)
+            val response = ApiResponse(true, "Token başarıyla yenilendi", newTokens)
+            return ResponseEntity.ok(response)
+        } catch (e: IllegalArgumentException) {
+            val errorResponse = ApiResponse<LoginResponse>(false, e.message ?: "Geçersiz refresh token")
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse)
+        } catch (e: Exception) {
+            val response = ApiResponse<LoginResponse>(
+                success = false,
+                message = "Sunucu tarafında beklenmedik bir hata oluştu."
+            )
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response)
         }
     }
 

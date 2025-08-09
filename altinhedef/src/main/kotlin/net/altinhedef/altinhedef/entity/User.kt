@@ -6,6 +6,7 @@ import org.hibernate.annotations.UpdateTimestamp
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails
+import java.time.Instant
 import java.time.LocalDateTime
 
 @Entity
@@ -26,6 +27,12 @@ data class User(
 
     @Column(name = "password_hash", nullable = false)
     var passwordHash: String,
+
+    @Column(name = "refresh_token")
+    var refreshToken: String? = null,
+
+    @Column(name = "refresh_token_expiry")
+    var refreshTokenExpiry: Instant? = null,
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "role_id", nullable = false)
